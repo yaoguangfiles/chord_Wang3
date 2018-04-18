@@ -20,14 +20,14 @@ RPCClient::RPCClient()
 void RPCClient::rpc_request(const string &serverIP, const string &localIP, const string &message)
 {
     const char *serverIPChars = serverIP.c_str();
-    const char *messageChars = message.c_str();
+//    const char *messageChars = message.c_str();
     const char *localIPChars = localIP.c_str();
-    char *port = "12345";
+    const char *port = "12345";
 
     char *messageChars2 = new char[message.length() + 1];
     strcpy(messageChars2, message.c_str());
 
-    cout << "[RPCClient.cpp][rpc_request()]: send a message: '" << messageChars2
+    cout << "(Info): send a message: '" << messageChars2
     	 << "' to node (ip: " << serverIPChars << ") from node (ip: " << localIPChars << ")." << endl;
 
     this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
@@ -76,7 +76,7 @@ void RPCClient::rpc_request(const string &serverIP, const string &localIP, const
 //	this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
 //}
 
-string RPCClient::sendMessage(const char *serverIP, char *port, const char *localIP, char *message)
+string RPCClient::sendMessage(const char *serverIP, const char *port, const char *localIP, char *message)
 {
     struct sockaddr_in echoserver;  // structure for address of the server.
 
@@ -103,7 +103,7 @@ string RPCClient::sendMessage(const char *serverIP, char *port, const char *loca
  * @return sockaddr_in The structure describing an Internet socket address.
  *     I will be used for sending and receiving messages from the server.
  */
-struct sockaddr_in RPCClient::configureClient(const char *ip, char *port, int &sock, struct sockaddr_in echoserver, const char *localIP)
+struct sockaddr_in RPCClient::configureClient(const char *ip, const char *port, int &sock, struct sockaddr_in echoserver, const char *localIP)
 {
     // Create the UDP socket
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {

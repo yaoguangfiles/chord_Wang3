@@ -2,16 +2,16 @@
  This is the simulator for the Chord peer-to-peer lookup algorithm using reinforcement learning, only the basic functions related to the research are provided.
 
  */
-#include<cmath>
-#include<vector>
-#include<iostream>
-#include<map>
-#include<cstdlib>
-#include<time.h>
-#include<algorithm>
-#include<limits.h>
-#include<string>
-#include<sstream>
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <map>
+#include <cstdlib>
+#include <time.h>
+#include <algorithm>
+#include <limits.h>
+#include <string>
+#include <sstream>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -137,7 +137,7 @@ vector<finger> findFinger(int arr[], int ind, vector<vector<double> > dist) //fi
 		indexList.push_back(findClosestInclude(arr, NUMBER, tempIndex));
 	}
 
-	for (int i = 0; i < indexList.size(); ++i)
+	for (int i = 0; i < (int) indexList.size(); ++i)
 	{
 		finger temp;
 		temp.key = arr[indexList[i]];
@@ -168,7 +168,7 @@ int findNext(node& n, int targetKey, int flag)
 	if (flag == 0)
 	{
 		min = INT_MAX;
-		for (int i = 0; i < n.fingerTable.size(); ++i)
+		for (int i = 0; i < (int) n.fingerTable.size(); ++i)
 		{
 			if (distance(n.fingerTable[i].key, targetKey, size) < min)
 			{
@@ -184,7 +184,7 @@ int findNext(node& n, int targetKey, int flag)
 		double N = NUMBER;
 		min = INT_MAX;
 		int cutoff = 0;
-		for (int i = 0; i < n.fingerTable.size(); ++i)
+		for (int i = 0; i < (int) n.fingerTable.size(); ++i)
 		{
 			if (distance(n.key, targetKey, size)
 					< distance(n.fingerTable[i].key, targetKey, size))
@@ -215,7 +215,7 @@ int findNext(node& n, int targetKey, int flag)
 		double noize = 0.01;		//exploration rate
 		int cutoff = 0;
 		//deterimne feasiable actions
-		for (int i = 0; i < n.fingerTable.size(); ++i)
+		for (int i = 0; i < (int) n.fingerTable.size(); ++i)
 		{
 			if (distance(n.key, targetKey, size)
 					< distance(n.fingerTable[i].key, targetKey, size))
@@ -247,7 +247,7 @@ int findNext(node& n, int targetKey, int flag)
 double findMaxQ(node& n)
 {
 	double max = INT_MIN;
-	for (int i = 0; i < n.fingerTable.size(); ++i)
+	for (int i = 0; i < (int) n.fingerTable.size(); ++i)
 	{
 		if (n.fingerTable[i].qvalue >= max)
 			max = n.fingerTable[i].qvalue;
@@ -308,7 +308,7 @@ string getSubStr(const string &str, const string &subStr1, const string &subStr2
 	unsigned first_position = first + subStr1.length();
 	unsigned last = str.find(subStr2, first_position);
 
-	cout << "first_position:" << first_position << ", last:" << last << endl;
+//	cout << "first_position:" << first_position << ", last:" << last << endl;
 	return str.substr(first_position, last - first_position);
 }
 
@@ -325,7 +325,7 @@ char *getSubStr(char str[], char char1, char char2)
 //    int first_position = first + subStr1.length();
 	int last = 0;
 
-	for (int i = 0; i < strlen(str); i++)
+	for (int i = 0; i < (int) strlen(str); i++)
 	{
 		if (str[i] == char1)
 		{
@@ -348,7 +348,7 @@ char *getSubStr(char str[], char char1, char char2)
 
 	substr[last - first - 1] = '\n';
 
-	cout << "substr: " << substr << endl;
+//	cout << "substr: " << substr << endl;
 
 	return substr;
 }
@@ -407,8 +407,7 @@ int main()
 		// +++++++++++++++++++++++++++++++++++++++++
 
 //		string networkIp = counterIpToNetworkIp(temp.ip);
-		cout << "(Info): starting node server (ip: " << temp.networkIp << ")."
-				<< endl;
+		cout << "(Info): starting node server (ip: " << temp.networkIp << ")." << endl;
 
 		pid_t pid;
 
@@ -444,7 +443,7 @@ int main()
 	}
 
 	//Experiment
-	double average = 0, av;
+//	double average = 0, av;
 
 	//training group
 	cout << "moving average of latency for training group:\n";
@@ -452,11 +451,11 @@ int main()
 
 	int id;
 
-	do
-	{
-		id = rand() % NUMBER;
-
-	} while (id % 2 == 0);
+//	do
+//	{
+//		id = rand() % NUMBER;
+//
+//	} while (id % 2 == 0);
 
 	stringstream ss;
 	ss << id;
@@ -464,8 +463,8 @@ int main()
 	string randomIP;
 	ss >> randomIP;
 	//randStart=net[randomIP];
-
-	string randomNetworkI = counterIpToNetworkIp(randomIP);
+//	string randomNetworkI = counterIpToNetworkIp(randomIP);
+	string randomNetworkI = "127.0.0.3";
 
 	string localIP = "127.0.0.2";
 	//      string serverIP = "127.0.0.3";
@@ -477,16 +476,19 @@ int main()
 	//      package ret=route(net, net.request[randomIP], randEnd, 2);
 
 	// pass the lookup command to the node, "lookup(targetkey){flag}"
-	string request_cmd1 = "lookup(" + to_string(randEnd) + "){2}";
+	string request_cmd1 = "{type=lookup}" +
+			     (string) "{targetKey=" +to_string(randEnd) + "}" +
+						  "{flag=" + "2" + "}"
+				 	 	  "{callingNodeIp=" + localIP + "}" +
+						  "{startNodeIp=" + localIP + "}";
 
 	// have the node request the target key
 	// pass the lookup command to the node, "lookup(targetkey){flag}"
-	//      string receivedStr = net.request[randomIP].client->rpc_request( net.request[randomIP].ip
-	//              , net.request[randomIP].ip, request_cmd1 );
-	string receivedStr = net.request[localIP].client->rpc_request(
-			randomNetworkI, localIP, request_cmd1);
 
-	cout << "(Info): receivedStr: |" << receivedStr << "|" << endl;
+	net.request[localIP].client->rpc_request(randomNetworkI, localIP, request_cmd1);
+
+//	cout << "(Info): The node (ip: " << net.request[localIP].networkIp
+//		 << ") is finding the node with message: |" << request_cmd1 << "|" << endl;
 
 	// ------------- the end of main ------------
 }
@@ -531,7 +533,7 @@ void configureServer(const char *serverIP, node &n)
 		exit(EXIT_FAILURE);
 	}
 
-	cout << "(Info): Server (ip: " << serverIP
+	cout << "(Info): Server (ip: " << n.networkIp
 			<< ") is running. Waiting for message..." << endl;
 
 	// Run until cancelled
@@ -547,8 +549,10 @@ void configureServer(const char *serverIP, node &n)
 			exit(EXIT_FAILURE);
 		}
 
+		string dataReceived = string(buffer);
+
 		cout << "(Info): The Server (ip: " << serverIP << ") received data: |"
-				<< buffer << "|." << endl;
+				<< dataReceived << "|." << endl;
 
 		if (received > 0 && strncmp(buffer, "closed", 6) == 0)
 		{
@@ -569,21 +573,32 @@ void configureServer(const char *serverIP, node &n)
 
 		// if this is a request for a lookup
 		// the passed request command will be in the form of "lookup(targetkey){flag}"
-		if (received > 0 && strncmp(buffer, lookup, 6) == 0)
+//		if (received > 0 && strncmp(buffer, lookup, 6) == 0)
+		if (received > 0 && getField(dataReceived, "type") == lookup )
 		{
 			string strRequest = string(buffer);
 
-			cout << "(Info): Server (ip: " << n.networkIp << ") received message 'lookup' command: |"
-				 << strRequest << "|." << endl;
+//			cout << "(Info): Server (ip: " << n.networkIp << ") received message 'lookup' command: |"
+//				 << strRequest << "|." << endl;
 
 			int targetKey = std::stoi(getField(strRequest, "targetKey"));
 			int flag      = std::stoi(getField(strRequest, "flag"));
+			int propagation      = std::stoi(getField(strRequest, "propagation"));
+			int totalTime      = std::stoi(getField(strRequest, "totalTime"));
+			int fingerIndex      = std::stoi(getField(strRequest, "fingerIndex"));
 			string startNodeIp = getField(strRequest, "startNodeIp");
 			string callingNodeIp = getField(strRequest, "callingNodeIp");
 
 			package result;
 
-			int fingerIndex = findNext(n, targetKey, flag);
+			if (flag == 2)
+				updateQ(n, targetKey, propagation);
+
+			double totalTimePassing = (double) totalTime + n.fingerTable[fingerIndex].latency;
+
+			fingerIndex = findNext(n, targetKey, flag);
+
+			cout << "(Info): fingerIndex: " << fingerIndex << endl;
 
 			if (fingerIndex == -1)
 			{
@@ -592,12 +607,14 @@ void configureServer(const char *serverIP, node &n)
 				result.totalTime = 0;
 				result.propagation = findMaxQ(n);
 
+//				string str1 = "{targetNetwortIp=";
 				string request_cmd1 = "{type=respond}" +
-									   "{targetNetwortIp=" + to_string(result.networkIp) + "}" +
-									   "{totalTime=" + to_string(result.totalTime) + "}" +
-									   "{propagation=" + to_string(result.propagation) + "}" +
-									   "{fingerIndex=" + to_string(fingerIndex) + "}" +
-									   "{startNodeIp=" + startNodeIp + "}";
+							 (string) "{targetNetwortIp=" + result.networkIp + "}" +
+									  "{totalTime=" + to_string(result.totalTime) + "}" +
+									  "{propagation=" + to_string(result.propagation) + "}" +
+									  "{fingerIndex=" + to_string(fingerIndex) + "}" +
+									  "{callingNodeIp=" + n.networkIp + "}" +
+									  "{startNodeIp=" + startNodeIp + "}";
 
 				n.client->rpc_request(callingNodeIp, n.networkIp, request_cmd1);
 			}
@@ -606,7 +623,7 @@ void configureServer(const char *serverIP, node &n)
 				string nextNetworkIp = n.fingerTable[fingerIndex].networkIp;
 
 				string request_cmd1 = "{type=lookup}" +
-						              "{targetKey=" + to_string(targetKey) + "}" +
+							 (string) "{targetKey=" + to_string(targetKey) + "}" +
 						              "{flag="+to_string(flag) + "}" +
 									  "{callingNodeIp=" + n.networkIp + "}" +
 									  "{startNodeIp=" + startNodeIp + "}";
@@ -620,12 +637,13 @@ void configureServer(const char *serverIP, node &n)
 		// === begin: handle RPC response here ===
 		// =============================================
 
-		if (received > 0 && strncmp(buffer, respond, 7) == 0)
+//		if (received > 0 && strncmp(buffer, respond, 7) == 0)
+		if (received > 0 && getField(dataReceived, "type") == respond )
 		{
 			string strRequest = string(buffer);
 
-			cout << "(Info): The node server (ip: " << n.networkIp << ") received string :|" << strRequest
-				 << "| from node server (ip: " << n.networkIp << ")." << endl;
+//			cout << "(Info): The node server (ip: " << n.networkIp << ") received string :|" << strRequest
+//				 << "| from node server (ip: " << n.networkIp << ")." << endl;
 
 			int targetKey = std::stoi(getField(strRequest, "targetKey"));
 			int flag      = std::stoi(getField(strRequest, "flag"));
@@ -638,37 +656,37 @@ void configureServer(const char *serverIP, node &n)
 
 			// if the receive node is the node start request a lookup,
 			// stop responding and print the result.
-			if (n.networkIp != startNodeIp)
+			if (n.networkIp == startNodeIp && targetKey == -1)
 			{
-				string cmd1 =
-				{ "response", targetNetwortIp, totalTime, propagation };
-
 				string result =    "{targetNetwortIp=" + targetNetwortIp + "}" +
 								   "{totalTime=" + to_string(totalTime) + "}" +
 								   "{propagation=" + to_string(propagation) + "}";
 
-				cout << "The result for the lookup is: " << result << endl;
+				cout << "=======================================================" << endl;
+				cout << "Result: The result for the lookup is: " << result << endl;
+				cout << "=======================================================" << endl;
 			}
 			// if the receive node is the node start request a lookup,
 			// respond to the previous node.
-			else
-			{
-
-				if (flag == 2)
-					updateQ(n, fingerIndex, propagation);
-
-				//result.propagation = findMaxQ(n);
-				string totalTimePassing = totalTime + n.fingerTable[fingerIndex].latency;
-
-				string request_cmd1 = "{type=respond}" +
-									   "{targetNetwortIp=" + to_string(result.networkIp) + "}" +
-									   "{totalTime=" + to_string(result.totalTime) + "}" +
-									   "{propagation=" + to_string(result.propagation) + "}" +
-									   "{fingerIndex=" + to_string(fingerIndex) + "}" +
-									   "{startNodeIp=" + startNodeIp + "}";
-
-				n.client->rpc_request(callingNodeIp, n.networkIp, request_cmd1);
-			}
+//			else
+//			{
+//
+//				if (flag == 2)
+//					updateQ(n, fingerIndex, propagation);
+//
+//				//result.propagation = findMaxQ(n);
+//				double totalTimePassing = (double) totalTime + n.fingerTable[fingerIndex].latency;
+//
+//				string request_cmd1 = "{type=respond}" +
+//							 (string) "{targetNetwortIp=" + targetNetwortIp + "}" +
+//									  "{totalTime=" + to_string(totalTimePassing) + "}" +
+//									  "{propagation=" + to_string(propagation) + "}" +
+//									  "{fingerIndex=" + to_string(fingerIndex) + "}" +
+//									  "{callingNodeIp=" + callingNodeIp + "}" +
+//									  "{startNodeIp=" + startNodeIp + "}";
+//
+//				n.client->rpc_request(callingNodeIp, n.networkIp, request_cmd1);
+//			}
 
 
 		} // end of "respond" session

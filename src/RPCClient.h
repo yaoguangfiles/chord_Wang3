@@ -29,9 +29,9 @@ class RPCClient
 {
     public:
         RPCClient();
-        string rpc_request(const string &serverIP, const string &localIP, const string &message);
-        string sendMessage(const char *serverIP, char *port, const char *localIP, char *message);
-        struct sockaddr_in configureClient(const char *ip, char *port, int &sock
+        void rpc_request(const string &serverIP, const string &localIP, const string &message);
+        string sendMessage(const char *serverIP, const char *port, const char *localIP, char *message);
+        struct sockaddr_in configureClient(const char *ip, const char *port, int &sock
                 , struct sockaddr_in echoserver, const char *localIP);
 //        void sendMessage(int sock, struct sockaddr_in echoserver, char *message);
         string sendMessage(int sock, struct sockaddr_in echoserver, char *message);
