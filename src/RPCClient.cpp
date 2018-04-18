@@ -33,48 +33,48 @@ void RPCClient::rpc_request(const string &serverIP, const string &localIP, const
     this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
 }
 
-void  RPCClient::rpc_request( const string &serverIP, const string &localIP, const string &message,  int fingerIndex, node &n)
-{
-
-	const char *serverIPChars = serverIP.c_str();
-	const char *messageChars = message.c_str();
-	const char *localIPChars = localIP.c_str();
-	char *port = "12345";
-
-	char *messageChars2 = new char[message.length() + 1];
-	strcpy(messageChars2, message.c_str());
-
-	cout << "[RPCClient.cpp][rpc_request()]: send a message: '" << messageChars2
-		 << "' to node (ip: " << serverIPChars << ") from node (ip: " << localIPChars << ")." << endl;
-
-
-//	cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
-//					  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
+//void  RPCClient::rpc_request( const string &serverIP, const string &localIP, const string &message,  int fingerIndex, node &n)
+//{
 //
-//	package receivedPkg = stringToPackage(receivedStr);
-	//end recursive section
-
-	// the passed request command will be in the form of "lookup(targetkey){flag}"
-
-	// extract the key from the received buffer.
-	int targetKey = std::stoi( getSubStr(message, '(', ')') );
-
-	// extract from the received buffer.
-	int flag      = std::stoi( getSubStr(message, '{', '}') );
-
-	string resultStr = ""; // the result produced by this node.
-
-	if( flag == 2 )
-		updateQ( n, fingerIndex, receivedPkg.propagation );
-
-	result.ip = receivedPkg.ip;
-	result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
-
-	// return result;
-	resultStr = packageToString( result );
-
-	this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
-}
+//	const char *serverIPChars = serverIP.c_str();
+//	const char *messageChars = message.c_str();
+//	const char *localIPChars = localIP.c_str();
+//	char *port = "12345";
+//
+//	char *messageChars2 = new char[message.length() + 1];
+//	strcpy(messageChars2, message.c_str());
+//
+//	cout << "[RPCClient.cpp][rpc_request()]: send a message: '" << messageChars2
+//		 << "' to node (ip: " << serverIPChars << ") from node (ip: " << localIPChars << ")." << endl;
+//
+//
+////	cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
+////					  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
+////
+////	package receivedPkg = stringToPackage(receivedStr);
+//	//end recursive section
+//
+//	// the passed request command will be in the form of "lookup(targetkey){flag}"
+//
+//	// extract the key from the received buffer.
+//	int targetKey = std::stoi( getSubStr(message, '(', ')') );
+//
+//	// extract from the received buffer.
+//	int flag      = std::stoi( getSubStr(message, '{', '}') );
+//
+//	string resultStr = ""; // the result produced by this node.
+//
+//	if( flag == 2 )
+//		updateQ( n, fingerIndex, receivedPkg.propagation );
+//
+//	result.ip = receivedPkg.ip;
+//	result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
+//
+//	// return result;
+//	resultStr = packageToString( result );
+//
+//	this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
+//}
 
 string RPCClient::sendMessage(const char *serverIP, char *port, const char *localIP, char *message)
 {

@@ -459,18 +459,11 @@ int main()
 
 		temp.networkIp = counterIpToNetworkIp(temp.ip);
 
-//		string ip_prefix = "127.0.0.";
-//		string ip_subfix = to_string( i + 1);
-//		temp.ip = ip_prefix + ip_subfix;
-
-
-
 		temp.fingerTable = findFinger( nodeKey, i, distMatrix );
 
 		net.request[temp.ip] = temp;
 
 		temp.client = new RPCClient(); // configure RPC client
-//		temp.client->sendMessage("127.0.0.1", "12345", "127.0.0.2", "test:yao_zhong"); // send a message
 
 		// +++++++++++++++++++++++++++++++++++++++
 		// +++++++++++++++++++++++
@@ -495,14 +488,6 @@ int main()
 			// start a node server for each node
 			configureServer(temp.networkIp.c_str(), temp); // configure RPC server
 		}
-
-//		int period = 2;
-//		for(int i = 1; i <= period; i++)
-//		{
-//			sleep(1);
-//			cout << "(Info): Sleep counting: " << i << " of " << period << endl;
-//		}
-
 	}
 
 	for( int i = 0; i < NUMBER; ++i )
@@ -513,35 +498,59 @@ int main()
 	}
 
 	int TIME = 5;
-//	cout << "(Info): Sleep for "<<TIME<<" seconds for initializing all the node servers..." << endl;
 	for(int i = 1; i <= TIME; i++)
 	{
 		sleep(1);
 		cout << "(Info): Sleep counting: " << i << " of " << TIME << endl;
 	}
-//	cout << "(Info): Wake up after sleeping for " <<TIME<< endl;
-
-	/*test build distance matrix
-	for(int i=0; i<distMatrix.size(); ++i)
-	{
-		for(int j=0; j<distMatrix[0].size(); ++j)
-		{
-			cout<<distMatrix[i][j]<<' ';
-		}
-		cout<<'\n';
-	}*/
-	//test route
-	//cout<<route(distMatrix, nodeList, number, order, nodeIndex[0], 0, 0);
 
 	//Experiment
 	double average = 0, av;
-	//int randStart=nodeIndex[0];//nodeIndex[rand()%number];
-	//int randEnd=100;//rand()%ringSize;
 
 	//training group
 	cout<<"moving average of latency for training group:\n";
 	vector<double> record;
 
+    int id;
+
+    do
+    {
+        id=rand()%NUMBER;
+
+    }while( id%2 == 0 );
+
+    stringstream ss;
+    ss << id;
+
+    string randomIP;
+    ss >> randomIP;
+    //randStart=net[randomIP];
+
+    string randomNetworkI = counterIpToNetworkIp(randomIP);
+
+    string localIP = "127.0.0.2";
+    //      string serverIP = "127.0.0.3";
+
+    int randEnd = rand()%ringSize;
+
+    // +++++++++++++++++++++
+    // ++++++++++++++++++++ change to rpc request
+    //      package ret=route(net, net.request[randomIP], randEnd, 2);
+
+    // pass the lookup command to the node, "lookup(targetkey){flag}"
+    string request_cmd1 = "lookup("+to_string(randEnd)+"){2}";
+
+    // have the node request the target key
+    // pass the lookup command to the node, "lookup(targetkey){flag}"
+    //      string receivedStr = net.request[randomIP].client->rpc_request( net.request[randomIP].ip
+    //              , net.request[randomIP].ip, request_cmd1 );
+    string receivedStr = net.request[localIP].client->rpc_request( randomNetworkI, localIP, request_cmd1 );
+
+    cout << "(Info): receivedStr: |" << receivedStr << "|" << endl;
+
+    // ------------- the end of main ------------
+
+	/*
 	for(int i=0; i<REPEAT; ++i)
 	{
 		//node randStart;
@@ -645,6 +654,7 @@ int main()
 	{
 		cout<<record[i]<<'\n';
 	}
+	*/
 }
 
 
@@ -777,28 +787,29 @@ void configureServer(const char *serverIP, node &n)
 			// node_nextIP.request(targetKey, flag);
 //			string receivedStr = n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1 );
 //			string receivedStr = n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1,  fingerIndex, n);
-			n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1 );
+//			n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1 );
+			n.client->rpc_request( n.fingerTable[fingerIndex].networkIp, n.networkIp, request_cmd1 );
 //			n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1,  fingerIndex, n);
+
 
 			// ++++++++++++++++++++++++++++++
 			// +++++++ The below part will be done in the response session.
 			// ++++++++++++++++++++++++++++++
-			cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
-				  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
-
-			package receivedPkg = stringToPackage(receivedStr);
-			//end recursive section
-
-			if( flag == 2 )
-				updateQ( n, fingerIndex, receivedPkg.propagation );
-
-			result.ip = receivedPkg.ip;
-			result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
-
-			// return result;
-			resultStr = packageToString( result );
-
-			// }
+//			cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
+//				  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
+//
+//			package receivedPkg = stringToPackage(receivedStr);
+//			//end recursive section
+//
+//			if( flag == 2 )
+//				updateQ( n, fingerIndex, receivedPkg.propagation );
+//
+//			result.ip = receivedPkg.ip;
+//			result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
+//
+//			// return result;
+//			resultStr = packageToString( result );
+        }
 
             // -------------------- end: loop up the node -----------------------
 
@@ -828,12 +839,6 @@ void configureServer(const char *serverIP, node &n)
 				// if the ip is the ip request, end and print the result,
 				// otherwise, send the result string back to the previous node ip.
 
-			}
-
-
-//            char nodeIdChars[50];
-//
-//            sprintf(nodeIdChars, "FoundId:<%d>[%s]", n.key, n.ip.c_str());
 
             sendto(sock, resultStr.c_str(), resultStr.length() + 1, 0, (struct sockaddr *) &echoclient, clientlen);
         }
