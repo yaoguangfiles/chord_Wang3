@@ -27,7 +27,7 @@ using namespace std;
 
 #define PORT_NUM 12345 // the port the RPC server listens
 #define lookup   "lookup" // the RPC request command for requesting a service for find the node
-#define response   "response" // the RPC response command for indicating the request is a response of a request
+#define respond   "respond" // the RPC response command for indicating the request is a response of a request
 
 const int ORDER=14;             //the size of chord ring will be 2^order
 const int NUMBER=3; // 400;	        //the number of nodes inside chord ring
@@ -772,23 +772,48 @@ void configureServer(const char *serverIP, node &n)
 			string nextIp = n.fingerTable[fingerIndex].ip;
 			result.propagation = findMaxQ( n );
 
-			//being recursive section:
-			//cout<<net.request[nextIp].fingerTable[0].latency<<'\n';
+			// ---------- new lookup begin -------------
 
-			// this is the only place need to refer to net. For the version with RPC,
-			// this should be done on another node
-			// package receive = route_rpc( net, net.request[nextIp], targetKey, flag );
-			// +++++++++++++++++++++++++++++++++++++++++
-			// ++ RPC request the service from the node with next ip
-			// +++++++++++++++++++++++++++++++++++++++++
+			// the passed request command will be in the form of "lookup(targetkey){flag}"
 
-			string request_cmd1 = "lookup("+to_string(targetKey)+"){"+to_string(flag)+"}";
+			// extract the key from the received buffer.
+			int targetKey = std::stoi( getSubStr(buffer, '(', ')') );
+
+			// extract from the received buffer.
+			int flag      = std::stoi( getSubStr(buffer, '{', '}') );
+
+			int fingerIndex=findNext(n, targetKey, flag);
+
+			if(fingerIndex==-1)
+			{
+				result.ip = n.ip;
+				result.totalTime = 0;
+				result.propagation = findMaxQ( n );
+
+				string request_cmd1 = "respond("+to_string(result.ip)+"){"+to_string(result.totalTime)+"}{"+to_string(result.propagation)+"}{"+initilizingNodeIp+"}";
+//				string request_cmd1 = {"respond", result.ip, result.totalTime, result.propagation, initilizingNodeIp}
+//				node<local>.rpc_send(nodeIpInitializing, cmd1);
+				n.client->rpc_request( previousNode_networkIp, n.networkIp, request_cmd1 );
+
+			}else{
+
+				string nextIp = n.fingerTable[fingerIndex].ip;
+
+				string request_cmd1 = "lookup("+to_string(targetKey)+"){"+to_string(flag)+"}";
+//				string request_cmd1 = {"lookup", targetKey, flag, result.totalTime, result.propagation, initilizingNodeIp}
+//				node<local>.rpc_send(nextIp, cmd1);
+				n.client->rpc_request( n.fingerTable[fingerIndex].networkIp, n.networkIp, request_cmd1 );
+			}
+
+			// ---------- new lookup end -------------
+
+//			string request_cmd1 = "lookup("+to_string(targetKey)+"){"+to_string(flag)+"}";
 
 			// node_nextIP.request(targetKey, flag);
 //			string receivedStr = n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1 );
 //			string receivedStr = n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1,  fingerIndex, n);
 //			n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1 );
-			n.client->rpc_request( n.fingerTable[fingerIndex].networkIp, n.networkIp, request_cmd1 );
+//			n.client->rpc_request( n.fingerTable[fingerIndex].networkIp, n.networkIp, request_cmd1 );
 //			n.client->rpc_request( n.fingerTable[0].networkIp, n.networkIp, request_cmd1,  fingerIndex, n);
 
 
@@ -815,32 +840,56 @@ void configureServer(const char *serverIP, node &n)
 
 			// === begin: handle RPC response here ===
 
-			if(received > 0 && strncmp(buffer,response, 8) == 0 )
+			if(received > 0 && strncmp(buffer,respond, 8) == 0 )
 			{
+
+				cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
+									  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
+
+				// ---------- new respond begin -------------
+
+				if(node_this.networkIp != initilizingNodeIp)
+				{
+					string cmd1 = {"response", result.ip, result.totalTime, result.propagation}
+					cout << "The result for the lookup is: " << cmd1 << endl;
+				}else{
+
+					if(flag==2)
+						updateQ(n, fingerIndex, receive.propagation);
+
+					//result.propagation = findMaxQ(n);
+					result.totalTime = receive.totalTime + n.fingerTable[fingerIndex].latency;
+
+					string cmd1 = {"respond", result.ip, result.totalTime, result.propagation, initilizingNodeIp}
+					node<local>.rpc_request(nodeIpInitializing, cmd1);
+				}
+
+				// ---------- new respond end -------------
+
 				// send info to the local node server to pass the information back to itself for the calculation below.
 				// It will respond back the the previous node server at the end of the response.
 
-				cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
-					  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
-
-				package receivedPkg = stringToPackage(receivedStr);
-				//end recursive section
-
-				if( flag == 2 )
-					updateQ( n, fingerIndex, receivedPkg.propagation );
-
-				result.ip = receivedPkg.ip;
-				result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
-
-				// return result;
-				resultStr = packageToString( result );
-
-				// ++++++++++++++
-				// if the ip is the ip request, end and print the result,
-				// otherwise, send the result string back to the previous node ip.
-
-
-            sendto(sock, resultStr.c_str(), resultStr.length() + 1, 0, (struct sockaddr *) &echoclient, clientlen);
+//				cout << "(Info): The node server (ip: " << n.networkIp << ") received package string :|"
+//					  << receivedStr << "| from node server (ip: " << n.networkIp << ")." << endl;
+//
+//				package receivedPkg = stringToPackage(receivedStr);
+//				//end recursive section
+//
+//				if( flag == 2 )
+//					updateQ( n, fingerIndex, receivedPkg.propagation );
+//
+//				result.ip = receivedPkg.ip;
+//				result.totalTime = receivedPkg.totalTime + n.fingerTable[fingerIndex].latency;
+//
+//				// return result;
+//				resultStr = packageToString( result );
+//
+//				// ++++++++++++++
+//				// if the ip is the ip request, end and print the result,
+//				// otherwise, send the result string back to the previous node ip.
+//
+//
+//            sendto(sock, resultStr.c_str(), resultStr.length() + 1, 0, (struct sockaddr *) &echoclient, clientlen);
         }
 
         // ------------------- handle test message ---------------------

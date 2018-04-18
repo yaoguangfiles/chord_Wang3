@@ -199,21 +199,26 @@ int findNext(node& n, int targetKey, int flag)
 	return result;
 }
 
-double findMaxQ(node& n)
+// find the max Q value from the node's finger table.
+double findMaxQ( node& n )
 {
-	double max=INT_MIN;
-	for(int i=0; i<n.fingerTable.size(); ++i)
+	double max = INT_MIN;
+
+	for(int i = 0; i < n.fingerTable.size(); ++i)
 	{
-		if(n.fingerTable[i].qvalue>=max)
-			max=n.fingerTable[i].qvalue;
+		if(n.fingerTable[i].qvalue >= max)
+			max = n.fingerTable[i].qvalue;
 	}
+
 	return max;
 }
+
+// update the node's Q value of the finger table
 void updateQ(node& n, int action, double propagateQ)
 {
-	double lr=0.9;			//learning rate 
-	double lambda=0.9;		//decaying rate
-	n.fingerTable[action].qvalue+=lr*(-1.0*n.fingerTable[action].latency+lambda*propagateQ-n.fingerTable[action].qvalue);
+	double lr = 0.9;			//learning rate
+	double lambda = 0.9;		//decaying rate
+	n.fingerTable[action].qvalue += lr * ( -1.0 * n.fingerTable[action].latency + lambda * propagateQ - n.fingerTable[action].qvalue );
 }
 
 //find the whole routing of lookup, output the total latency
@@ -224,42 +229,89 @@ struct package
 	double totalTime;
 	double propagation;
 };
-/*
+
 package route(network& net, node& n, int targetKey, int flag)
 {
 	//node next;
-	package result;
+	package result; // the package used to hold node's ip, propagation time, and total time.
 
-	int fingerIndex=findNext(n, targetKey, flag);
-	if(fingerIndex==-1)
+	int fingerIndex = findNext( n, targetKey, flag ); // find the finger index of the next node.
+
+	// if the finger index is not a node, return the result to the calling function
+	if( fingerIndex == -1 )
 	{
-		result.ip=n.ip;
-		result.totalTime=0;
-		result.propagation=findMaxQ(n);
+		result.ip = n.ip;
+		result.totalTime = 0;
+		result.propagation = findMaxQ( n );
+		return result;
+	// if the finger index is a node
+	}else{
+
+		string nextIp = n.fingerTable[fingerIndex].ip; // get the ip coresponding to the finger index.
+
+		result.propagation = findMaxQ( n ); // calculate the propagated max Q value.
+
+		//this is the only place need to refer to net. For the version with RPC, this should be done on another node
+		package receive = route( net, net.request[nextIp], targetKey, flag );
+
+		// if it is reinforcment learning (flag==2)
+		if(flag == 2)
+			updateQ( n, fingerIndex, receive.propagation ); // update the node's Q value
+
+		result.ip = receive.ip; // get the called node's ip.
+		result.totalTime = receive.totalTime+n.fingerTable[fingerIndex].latency; // accumulate the total time.
+
 		return result;
 	}
-	string nextIp=n.fingerTable[fingerIndex].ip;
-	result.propagation=findMaxQ(n);
-
-	//being recursive section:
-	//cout<<net.request[nextIp].fingerTable[0].latency<<'\n';	
-
-        //this is the only place need to refer to net. For the version with RPC, this should be done on another node
-	package receive=route(net, net.request[nextIp], targetKey, flag);	
-
-	//end recursive section
-	
-	if(flag==2)
-		updateQ(n, fingerIndex, receive.propagation);
-
-	result.ip=receive.ip;
-	result.totalTime=receive.totalTime+n.fingerTable[fingerIndex].latency;
-
-
-	return result;
 }
-*/
 
+server.("lookup")
+{
+	targetKey = get("targetKey");
+	flag = get("flag");
+
+	int fingerIndex=findNext(n, targetKey, flag);
+
+	if(fingerIndex==-1)
+	{
+
+		result.ip = n.ip;
+		result.totalTime = 0;
+		result.propagation = findMaxQ( n );
+
+		string cmd1 = {"respond", result.ip, result.totalTime, result.propagation, initilizingNodeIp}
+		node<local>.rpc_send(nodeIpInitializing, cmd1);
+
+	}else{
+
+		string nextIp = n.fingerTable[fingerIndex].ip;
+
+
+		string cmd1 = {"lookup", targetKey, flag, result.totalTime, result.propagation, initilizingNodeIp}
+		node<local>.rpc_send(nextIp, cmd1);
+	}
+}
+
+server.("respond")
+{
+		if(node_this.networkIp != initilizingNodeIp)
+		{
+			string cmd1 = {"response", result.ip, result.totalTime, result.propagation}
+			print(cmd1);
+		}else{
+
+			if(flag==2)
+				updateQ(n, fingerIndex, receive.propagation);
+
+			//result.propagation = findMaxQ(n);
+			result.totalTime = receive.totalTime + n.fingerTable[fingerIndex].latency;
+
+			string cmd1 = {"respond", result.ip, result.totalTime, result.propagation, initilizingNodeIp}
+			node<local>.rpc_send(nodeIpInitializing, cmd1);
+		}
+}
+
+/*
 package node<n>.route(networkIp, string cmd1)
 {
 	//node next;
@@ -281,8 +333,8 @@ package node<n>.route(networkIp, string cmd1)
 	//being recursive section:
 	//cout<<net.request[nextIp].fingerTable[0].latency<<'\n';	
 
-        //this is the only place need to refer to net. For the version with RPC, this should be done on another node
-        string cmd1 = {targetKey, flag, result.totalTime, result.propagation}
+    //this is the only place need to refer to net. For the version with RPC, this should be done on another node
+    string cmd1 = {targetKey, flag, result.totalTime, result.propagation}
 	node<n>.route(n.fingerTable[fingerIndex].networkIp, cmd1);	
 
 	//end recursive section
@@ -317,15 +369,24 @@ server.("lookup")
 		result.totalTime=0;
 		result.propagation=findMaxQ(n);
 
-		string cmd1 = {"response", result.ip, result.totalTime, result.propagation}
-		node<n>.rpc_respond(serverIp, cmd1)
+		string cmd1 = {"respond", result.ip, result.totalTime, result.propagation}
+		node<n>.rpc_respond(serverIp, cmd1);
 		//return result;
 	}else{
+		string nextIp=n.fingerTable[fingerIndex].ip;
+		result.propagation=findMaxQ(n);
 		result.totalTime=receive.totalTime+n.fingerTable[fingerIndex].latency;
 		string cmd1 = {"lookup", targetKey, flag, result.totalTime, result.propagation}
 		node<n>.rpc_request(serverIp, cmd1);
 	}
 }
+
+server.("rpc_respond")
+{
+		string cmd1 = {"response", result.ip, result.totalTime, result.propagation}
+		node<n>.rpc_respond(serverIp, cmd1);
+}
+*/
 
 int main()
 {
