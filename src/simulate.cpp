@@ -30,7 +30,7 @@ using namespace std;
 #define respond   "respond" // the RPC response command for indicating the request is a response of a request
 
 const int ORDER = 14;             //the size of chord ring will be 2^order
-const int NUMBER = 3; // 400;	        //the number of nodes inside chord ring
+const int NUMBER = 12; // 400;	        //the number of nodes inside chord ring
 const int REPEAT = 10000; //the total number of lookups performed by all the nodes inside chord ring
 
 //find the whole routing of lookup, output the total latency
@@ -473,8 +473,9 @@ int main()
 //	string randomNetworkI = counterIpToNetworkIp(randomIP);
 	string randomNetworkI = "127.0.0.3";
 
-	string localIP = "127.0.0.1";
+//	string localIP = "127.0.0.1";
 	//      string serverIP = "127.0.0.3";
+	string localIP = "127.0.0.5";
 
 	int randEnd = rand() % ringSize;
 
@@ -658,30 +659,29 @@ void configureServer(const char *serverIP, node &n)
 		{
 			string strRequest = string(buffer);
 
-			cout << "(Info): {type=respond} The node server (ip: " << n.networkIp << ") received string :|" << strRequest
-				 << "|" << endl;
+//			cout << "(Info): {type=respond} The node server (ip: " << n.networkIp << ") received string :|" << strRequest << "|" << endl;
 
-			int targetKey = std::stoi(getField(strRequest, "targetKey"));
-			int flag      = std::stoi(getField(strRequest, "flag"));
-			int fingerIndex = std::stoi(getField(strRequest, "fingerIndex"));
-			int totalTime = std::stoi(getField(strRequest, "totalTime"));
-			int propagation = std::stoi(getField(strRequest, "propagation"));
-			string startNodeIp = getField(strRequest, "startNodeIp");
-			string callingNodeIp = getField(strRequest, "callingNodeIp");
+//			int targetKey = std::stoi(getField(strRequest, "targetKey"));
+//			int flag      = std::stoi(getField(strRequest, "flag"));
+//			int fingerIndex = std::stoi(getField(strRequest, "fingerIndex"));
+//			int totalTime = std::stoi(getField(strRequest, "totalTime"));
+//			int propagation = std::stoi(getField(strRequest, "propagation"));
+//			string startNodeIp = getField(strRequest, "startNodeIp");
+//			string callingNodeIp = getField(strRequest, "callingNodeIp");
 			string targetNetwortIp = getField(strRequest, "targetNetwortIp");
 
 			// if the receive node is the node start request a lookup,
 			// stop responding and print the result.
-			if (n.networkIp == startNodeIp && targetKey == -1)
+//			if (n.networkIp == startNodeIp && targetKey == -1)
 			{
 //				string result =    "{targetNetwortIp=" + targetNetwortIp + "}" +
 //								   "{totalTime=" + to_string(totalTime) + "}" +
 //								   "{propagation=" + to_string(propagation) + "}";
 
-				string result =    "{targetNetwortIp=" + n.networkIp + "}";
+//				string result =    "{targetNetwortIp=" + targetNetwortIp + "}";
 
 				cout << "=======================================================" << endl;
-				cout << "Result: The node found: " << result << endl;
+				cout << "Result: The node found: " << targetNetwortIp << endl;
 				cout << "=======================================================" << endl;
 			}
 			// if the receive node is the node start request a lookup,
