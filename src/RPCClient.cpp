@@ -30,6 +30,10 @@ void RPCClient::rpc_request(const string &serverIP, const string &localIP, const
     cout << "(Info): send a message: '" << messageChars2
     	 << "' to node (ip: " << serverIPChars << ") from node (ip: " << localIPChars << ")." << endl;
 
+
+	cout << "(Info): Delay 2 second before send the message." << endl;
+	sleep(2);
+
     this->sendMessage(serverIPChars, port, localIPChars, messageChars2);
 }
 

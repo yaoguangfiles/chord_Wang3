@@ -302,20 +302,27 @@ string counterIpToNetworkIp(const string &counterIp)
 }
 
 // get a substring between subStr1 and subStr2 in str.
+string getField(const string &str, const string &field)
+{
+	return getSubStr(str, "{" + field + "=", "}");
+}
+
+// get a substring between subStr1 and subStr2 in str.
 string getSubStr(const string &str, const string &subStr1, const string &subStr2)
 {
 	unsigned first = str.find(subStr1);
 	unsigned first_position = first + subStr1.length();
 	unsigned last = str.find(subStr2, first_position);
 
-//	cout << "first_position:" << first_position << ", last:" << last << endl;
-	return str.substr(first_position, last - first_position);
-}
+//	cout << "first:" << first << ", last:" << last << endl;
 
-// the value for a field in str.
-string getField(const string &str, const string &field)
-{
-	return getSubStr(str, "{" + field + "=", "}");
+	if(first > str.length())
+		return "";
+
+	if(last < str.length())
+		return str.substr(first_position, last - first_position);
+	else
+		return "";
 }
 
 // get a substring between subStr1 and subStr2 in str.
@@ -466,7 +473,7 @@ int main()
 //	string randomNetworkI = counterIpToNetworkIp(randomIP);
 	string randomNetworkI = "127.0.0.3";
 
-	string localIP = "127.0.0.2";
+	string localIP = "127.0.0.1";
 	//      string serverIP = "127.0.0.3";
 
 	int randEnd = rand() % ringSize;
@@ -578,27 +585,19 @@ void configureServer(const char *serverIP, node &n)
 		{
 			string strRequest = string(buffer);
 
-//			cout << "(Info): Server (ip: " << n.networkIp << ") received message 'lookup' command: |"
-//				 << strRequest << "|." << endl;
-
 			int targetKey = std::stoi(getField(strRequest, "targetKey"));
 			int flag      = std::stoi(getField(strRequest, "flag"));
-			int propagation      = std::stoi(getField(strRequest, "propagation"));
-			int totalTime      = std::stoi(getField(strRequest, "totalTime"));
-			int fingerIndex      = std::stoi(getField(strRequest, "fingerIndex"));
+//			int propagation      = std::stoi(getField(strRequest, "propagation"));
+//			int totalTime      = std::stoi(getField(strRequest, "totalTime"));
+//			int fingerIndex      = std::stoi(getField(strRequest, "fingerIndex"));
 			string startNodeIp = getField(strRequest, "startNodeIp");
 			string callingNodeIp = getField(strRequest, "callingNodeIp");
 
 			package result;
 
-			if (flag == 2)
-				updateQ(n, targetKey, propagation);
+			int fingerIndex = findNext(n, targetKey, flag);
 
-			double totalTimePassing = (double) totalTime + n.fingerTable[fingerIndex].latency;
-
-			fingerIndex = findNext(n, targetKey, flag);
-
-			cout << "(Info): fingerIndex: " << fingerIndex << endl;
+//			cout << "(Info): fingerIndex: " << fingerIndex << endl;
 
 			if (fingerIndex == -1)
 			{
@@ -609,17 +608,34 @@ void configureServer(const char *serverIP, node &n)
 
 //				string str1 = "{targetNetwortIp=";
 				string request_cmd1 = "{type=respond}" +
-							 (string) "{targetNetwortIp=" + result.networkIp + "}" +
+							 (string) "{targetKey=" + to_string(targetKey) + "}" +
+				                      "{flag="+to_string(flag) + "}" +
+							          "{targetNetwortIp=" + result.networkIp + "}" +
 									  "{totalTime=" + to_string(result.totalTime) + "}" +
 									  "{propagation=" + to_string(result.propagation) + "}" +
 									  "{fingerIndex=" + to_string(fingerIndex) + "}" +
 									  "{callingNodeIp=" + n.networkIp + "}" +
 									  "{startNodeIp=" + startNodeIp + "}";
 
-				n.client->rpc_request(callingNodeIp, n.networkIp, request_cmd1);
+				if(n.networkIp != startNodeIp)
+					n.client->rpc_request(startNodeIp, n.networkIp, request_cmd1);
+
+				else
+				{
+					string result =    "{targetNetwortIp=" + n.networkIp + "}";
+
+					cout << "=======================================================" << endl;
+					cout << "Result: The node found: " << result << endl;
+					cout << "=======================================================" << endl;
+				}
 			}
 			else
 			{
+//				if (flag == 2)
+//					updateQ(n, fingerIndex, propagation);
+//
+//				double totalTimePassing = (double) totalTime + n.fingerTable[fingerIndex].latency;
+
 				string nextNetworkIp = n.fingerTable[fingerIndex].networkIp;
 
 				string request_cmd1 = "{type=lookup}" +
@@ -642,8 +658,8 @@ void configureServer(const char *serverIP, node &n)
 		{
 			string strRequest = string(buffer);
 
-//			cout << "(Info): The node server (ip: " << n.networkIp << ") received string :|" << strRequest
-//				 << "| from node server (ip: " << n.networkIp << ")." << endl;
+			cout << "(Info): {type=respond} The node server (ip: " << n.networkIp << ") received string :|" << strRequest
+				 << "|" << endl;
 
 			int targetKey = std::stoi(getField(strRequest, "targetKey"));
 			int flag      = std::stoi(getField(strRequest, "flag"));
@@ -658,12 +674,14 @@ void configureServer(const char *serverIP, node &n)
 			// stop responding and print the result.
 			if (n.networkIp == startNodeIp && targetKey == -1)
 			{
-				string result =    "{targetNetwortIp=" + targetNetwortIp + "}" +
-								   "{totalTime=" + to_string(totalTime) + "}" +
-								   "{propagation=" + to_string(propagation) + "}";
+//				string result =    "{targetNetwortIp=" + targetNetwortIp + "}" +
+//								   "{totalTime=" + to_string(totalTime) + "}" +
+//								   "{propagation=" + to_string(propagation) + "}";
+
+				string result =    "{targetNetwortIp=" + n.networkIp + "}";
 
 				cout << "=======================================================" << endl;
-				cout << "Result: The result for the lookup is: " << result << endl;
+				cout << "Result: The node found: " << result << endl;
 				cout << "=======================================================" << endl;
 			}
 			// if the receive node is the node start request a lookup,
